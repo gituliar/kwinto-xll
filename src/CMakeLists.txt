@@ -2,11 +2,12 @@ add_library(
     kwinto-xll SHARED
 
     "kwXll.cpp"
+    "kwUtils.cpp"
 
     "framework/framework.c"
     "framework/MemoryManager.cpp"
     "framework/MemoryPool.cpp"
- )
+)
 
  set_target_properties(
      kwinto-xll

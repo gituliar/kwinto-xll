@@ -1,12 +1,5 @@
-// Taken from https://github.com/elnormous/HTTPRequest
-#include "extern/HTTPRequest.hpp"
-#include "framework/framework.h"
-#include "nlohmann/json.hpp"
-
-using namespace std::string_literals;
-
-using json = nlohmann::json;
-using Error = std::string;
+#include "kwCommon.h"
+#include "kwUtils.h"
 
 
 class JsonHub
@@ -47,6 +40,26 @@ public:
 
 private:
     JsonHub() {};
+};
+
+
+class MemoryHub
+{
+private:
+    std::string
+        m_string;
+    std::vector<std::string>
+        m_stringPool;
+
+public:
+    std::string&
+        string()
+    {
+        return m_string;
+
+        m_stringPool.emplace_back();
+        return *m_stringPool.rbegin();
+    }
 };
 
 
@@ -121,40 +134,45 @@ private:
 };
 
 
+static MemoryHub memory;
+
+
 extern "C" __declspec(dllexport)
-LPXLOPER
-kwJson(const char* name, const char* key1_, const char* value1_)
+const char *
+kwJson(const char* name, XLOPER key1_, XLOPER value1_)
 {
-    const std::string key(key1_);
-    const std::string value(value1_);
+    Error error;
+    auto& res = memory.string();
 
     // create JSON object
-    json obj = {
-        {key, value}
-    };
+    json obj;
+    if (error = kw::toJson(key1_, value1_, obj); !error.empty())
+        return  (res = "ERROR: kwJson: " + error).c_str();
 
     // save JSON object
-    std::string newName;
-    if (auto error = JsonHub::instance().put(name, obj, newName); !error.empty())
-    {
-        return TempStrConst((LPSTR)("ERROR: kwJson: "s + error).c_str());
-    }
+    if (auto error = JsonHub::instance().put(name, obj, res); !error.empty())
+        return  (res = "ERROR: kwJson: " + error).c_str();
 
-    return TempStrConst((LPSTR)newName.c_str());
+    return res.c_str();
 }
 
 
 extern "C" __declspec(dllexport)
-LPXLOPER
+const char *
 kwJsonShow(const char* name)
 {
+    auto& res = memory.string();
+
     json object;
     if (auto error = JsonHub::instance().get(name, object); !error.empty())
     {
-        return TempStrConst((LPSTR)("ERROR: kwJsonShow: "s + error).c_str());
+        res = "ERROR: kwJsonShow: " + error;
+        return res.c_str();
     }
 
-    return TempStrConst((LPSTR)(object.dump()).c_str());
+    res = object.dump();
+
+    return res.c_str();
 }
 
 
@@ -216,7 +234,7 @@ xlAutoOpen(void)
 
     Excel12f(xlfRegister, 0, 11, (LPXLOPER12)&xDLL,
         (LPXLOPER12)TempStr12(L"kwJson"),
-        (LPXLOPER12)TempStr12(L"PCCC"),
+        (LPXLOPER12)TempStr12(L"CCPP"),
         (LPXLOPER12)TempStr12(L"kwJson"),
         (LPXLOPER12)TempStr12(L"name,key1,value1"),
         (LPXLOPER12)TempStr12(L"1"),
@@ -228,7 +246,7 @@ xlAutoOpen(void)
 
     Excel12f(xlfRegister, 0, 11, (LPXLOPER12)&xDLL,
         (LPXLOPER12)TempStr12(L"kwJsonShow"),
-        (LPXLOPER12)TempStr12(L"PC"),
+        (LPXLOPER12)TempStr12(L"CC"),
         (LPXLOPER12)TempStr12(L"kwJsonShow"),
         (LPXLOPER12)TempStr12(L"name"),
         (LPXLOPER12)TempStr12(L"1"),
