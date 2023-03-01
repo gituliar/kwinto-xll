@@ -159,14 +159,14 @@ kwJson(const char* name, XLOPER key1_, XLOPER value1_)
 
 extern "C" __declspec(dllexport)
 const char *
-kwJsonShow(const char* name)
+kwShow(const char* name)
 {
     auto& res = memory.string();
 
     json object;
     if (auto error = JsonHub::instance().get(name, object); !error.empty())
     {
-        res = "ERROR: kwJsonShow: " + error;
+        res = "ERROR: kwShow: " + error;
         return res.c_str();
     }
 
@@ -178,7 +178,7 @@ kwJsonShow(const char* name)
 
 extern "C" __declspec(dllexport)
 LPXLOPER
-kwRPC(const char* method_, const char* name_, const char* jsonId_)
+kwRpc(const char* method_, const char* name_, const char* jsonId_)
 {
     const std::string method(method_);
     const std::string name(name_);
@@ -190,7 +190,7 @@ kwRPC(const char* method_, const char* name_, const char* jsonId_)
 
     json response;
     if (auto error = RpcClient::instance().send(method_, params, response); !error.empty())
-        return TempStrConst((LPSTR)("ERROR: kwRPC: "s + error).c_str());
+        return TempStrConst((LPSTR)("ERROR: kwRpc: "s + error).c_str());
 
     if (response.contains("error"))
     {
@@ -201,26 +201,47 @@ kwRPC(const char* method_, const char* name_, const char* jsonId_)
             auto buf = error.dump();
             buf.resize(255);
 
-            return TempStrConst((LPSTR)("ERROR: kwRPC: Invalid error format: "s + buf).c_str());
+            return TempStrConst((LPSTR)("ERROR: kwRpc: Invalid error format: "s + buf).c_str());
         }
 
-        return TempStrConst((LPSTR)("ERROR: kwRPC: "s + error["message"].get<std::string>()).c_str());
+        return TempStrConst((LPSTR)("ERROR: kwRpc: "s + error["message"].get<std::string>()).c_str());
     }
     if (!response.contains("result"))
     {
         auto buf = response.dump();
         buf.resize(255);
 
-        return TempStrConst((LPSTR)("ERROR: kwRPC: Invalid response format: "s + buf).c_str());
+        return TempStrConst((LPSTR)("ERROR: kwRpc: Invalid response format: "s + buf).c_str());
     }
 
     // put response to JsonHub
     std::string newName;
     if (auto error = JsonHub::instance().put(name, response["result"], newName); !error.empty())
-        return TempStrConst((LPSTR)("ERROR: kwRPC: "s + error).c_str());
+        return TempStrConst((LPSTR)("ERROR: kwRpc: "s + error).c_str());
 
 
     return TempStrConst((LPSTR)newName.c_str());
+}
+
+
+extern "C" __declspec(dllexport)
+const char *
+kwValue(const char* id, const char* key_)
+{
+    auto& res = memory.string();
+
+    json object;
+    if (auto error = JsonHub::instance().get(id, object); !error.empty())
+        return (res = "ERROR: kwValue: " + error).c_str();
+
+
+    std::string key(key_);
+    if (!object.contains(key))
+        return (res = "ERROR: kwValue: Key '" + key + "' not found in JSON '" + id + "'").c_str();
+
+    res = object[key].dump();
+
+    return res.c_str();
 }
 
 
@@ -245,27 +266,39 @@ xlAutoOpen(void)
         (LPXLOPER12)TempStr12(L""));
 
     Excel12f(xlfRegister, 0, 11, (LPXLOPER12)&xDLL,
-        (LPXLOPER12)TempStr12(L"kwJsonShow"),
+        (LPXLOPER12)TempStr12(L"kwShow"),
         (LPXLOPER12)TempStr12(L"CC"),
-        (LPXLOPER12)TempStr12(L"kwJsonShow"),
+        (LPXLOPER12)TempStr12(L"kwShow"),
         (LPXLOPER12)TempStr12(L"name"),
         (LPXLOPER12)TempStr12(L"1"),
         (LPXLOPER12)TempStr12(L"kwintoFunction"),
         (LPXLOPER12)TempStr12(L""),
         (LPXLOPER12)TempStr12(L""),
-        (LPXLOPER12)TempStr12(L"Show full JSON object"),
+        (LPXLOPER12)TempStr12(L"Show JSON object"),
         (LPXLOPER12)TempStr12(L""));
 
     Excel12f(xlfRegister, 0, 11, (LPXLOPER12)&xDLL,
-        (LPXLOPER12)TempStr12(L"kwRPC"),
+        (LPXLOPER12)TempStr12(L"kwRpc"),
         (LPXLOPER12)TempStr12(L"PCCC"),
-        (LPXLOPER12)TempStr12(L"kwRPC"),
+        (LPXLOPER12)TempStr12(L"kwRpc"),
         (LPXLOPER12)TempStr12(L"Method,Output Json Id,Input Json Id"),
         (LPXLOPER12)TempStr12(L"1"),
         (LPXLOPER12)TempStr12(L"kwintoFunction"),
         (LPXLOPER12)TempStr12(L""),
         (LPXLOPER12)TempStr12(L""),
         (LPXLOPER12)TempStr12(L"Call remote procedure on the remote host"),
+        (LPXLOPER12)TempStr12(L""));
+
+    Excel12f(xlfRegister, 0, 11, (LPXLOPER12)&xDLL,
+        (LPXLOPER12)TempStr12(L"kwValue"),
+        (LPXLOPER12)TempStr12(L"CCC"),
+        (LPXLOPER12)TempStr12(L"kwValue"),
+        (LPXLOPER12)TempStr12(L"Id,Key"),
+        (LPXLOPER12)TempStr12(L"1"),
+        (LPXLOPER12)TempStr12(L"kwintoFunction"),
+        (LPXLOPER12)TempStr12(L""),
+        (LPXLOPER12)TempStr12(L""),
+        (LPXLOPER12)TempStr12(L"Show Json value"),
         (LPXLOPER12)TempStr12(L""));
 
 
