@@ -139,14 +139,16 @@ static MemoryHub memory;
 
 extern "C" __declspec(dllexport)
 const char *
-kwJson(const char* name, XLOPER key1_, XLOPER value1_)
+kwJson(const char* name,
+    XLOPER key1, XLOPER value1
+)
 {
     Error error;
     auto& res = memory.string();
 
     // create JSON object
     json obj;
-    if (error = kw::toJson(key1_, value1_, obj); !error.empty())
+    if (error = kw::toJson(key1, value1, obj); !error.empty())
         return  (res = "ERROR: kwJson: " + error).c_str();
 
     // save JSON object

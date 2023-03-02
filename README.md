@@ -35,12 +35,12 @@ Example:
 ### Send JSON-RPC
 
 ```
-=kwRPC(method, id, params) -> "json:<id>"
+=kwRpc(method, id, params) -> "json:<id>"
 ```
 
-`kwRPC` function sends a JSON-RPC request to the remote host. Result from the host is saved under
-`"json:<id>"` name, which you can use in other `kw*` functions later. If error occurs, a plain text
-message is returned instead.
+`kwRpc` invokes a remote function, waits for it to complete, and saves its result under
+`"json:<id>"` name, which you can later use in other `kw*` functions. On error a plain text message
+is returned instead.
 
 ### Show JSON
 
@@ -61,6 +61,13 @@ Example:
 
 ```
 =kwValue(id, key) -> "<value>"
+```
+
+### Config
+
+```
+=kwConfig() -> "<json>"
+=kwConfig(id) -> "<json>"
 ```
 
 ## Useful Links
